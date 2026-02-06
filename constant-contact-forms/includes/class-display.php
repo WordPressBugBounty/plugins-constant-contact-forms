@@ -86,19 +86,24 @@ class ConstantContact_Display {
 
 				/**
 				 * Filters the language code to be used with Google reCAPTCHA.
+				 *
 				 * See https://developers.google.com/recaptcha/docs/language for available values.
 				 *
 				 * @since 1.2.4
 				 * @since 1.7.0  Added form ID for conditional amending.
 				 * @since 2.10.0 Removed form ID due to changing where we invoke and use language code.
+				 * @since 2.16.0 Removed forced use of English, allowing for Google to autodetect.
 				 *
-				 * @param string $value Language code to use. Default 'en'.
+				 * @param string $value Language code to use. Default '' (makes Google autodetect).
 				 */
-				$recaptcha->set_language( apply_filters( 'constant_contact_recaptcha_lang', 'en' ) );
+				$recaptcha->set_language( apply_filters( 'constant_contact_recaptcha_lang', '' ) );
 				$recaptcha->enqueue_scripts();
 			} elseif ( 'hcaptcha' === $captcha_service->get_selected_captcha_service() ) {
 				$hcaptcha = new ConstantContact_hCaptcha();
 				$hcaptcha->enqueue_scripts();
+			} elseif ( 'turnstile' === $captcha_service->get_selected_captcha_service() ) {
+				$turnstile = new ConstantContact_turnstile();
+				$turnstile->enqueue_scripts();
 			}
 		}
 
@@ -155,6 +160,7 @@ class ConstantContact_Display {
 		$defaults = [
 			'form_background_color'               => '',
 			'form_description_font_size'          => '',
+			'form_max_width'                      => '',
 			'form_description_color'              => '',
 			'form_submit_button_font_size'        => '',
 			'form_submit_button_text_color'       => '',
@@ -177,6 +183,11 @@ class ConstantContact_Display {
 		$ctct_form_title_font_color = get_post_meta( $form_id, '_ctct_form_title_font_color', true );
 		if ( ! empty( $ctct_form_title_font_color ) ) {
 			$specific_form_css['form_title_font_color'] = "color: $ctct_form_title_font_color;";
+		}
+
+		$ctct_form_max_width = get_post_meta( $form_id, '_ctct_form_max_width', true );
+		if ( ! empty( $ctct_form_max_width ) ) {
+			$specific_form_css['max_width'] = "max-width: $ctct_form_max_width%;";
 		}
 
 		$ctct_form_description_font_size = get_post_meta( $form_id, '_ctct_form_description_font_size', true );
@@ -371,6 +382,10 @@ class ConstantContact_Display {
 			$form_styles = $this->specific_form_styles['form_background_color'];
 		}
 
+		if ( ! empty( $this->specific_form_styles['max_width'] ) ) {
+			$form_styles .= $this->specific_form_styles['max_width'];
+		}
+
 		foreach ( [ 'bottom', 'left', 'right', 'top' ] as $pos ) {
 			$form_styles .= $this->specific_form_styles[ 'form_padding_' . $pos ];
 		}
@@ -428,6 +443,8 @@ class ConstantContact_Display {
 				}
 			} elseif ( 'hcaptcha' === $selected_captcha_service ) {
 				$return .= $this->build_hcaptcha( $form_id );
+			} elseif ( 'turnstile' === $selected_captcha_service ) {
+				$return .= $this->build_turnstile( $form_id );
 			}
 		}
 
@@ -707,6 +724,73 @@ class ConstantContact_Display {
 	}
 
 	/**
+	 * Display an turnstile field.
+	 *
+	 * @since 2.16.0
+	 *
+	 * @param int $form_id ID of form being rendered.
+	 * @return string
+	 */
+	public function build_turnstile( int $form_id ) : string {
+		$turnstile = new ConstantContact_turnstile();
+
+		$turnstile->set_turnstile_keys();
+
+		$turnstile->set_theme(
+			/**
+			 * Filters the theme to be used with turnstile.
+			 *
+			 * Options are 'light' and 'dark';
+			 *
+			 * @since 2.16.0
+			 *
+			 * @param string $value   Theme to use. Default 'light'.
+			 * @param int    $form_id ID of the form being rendered.
+			 */
+			apply_filters( 'constant_contact_turnstile_theme', 'light', $form_id )
+		);
+
+		$turnstile->set_size(
+			/**
+			 * Filters the turnstile size to render.
+			 *
+			 * @since 2.16.0
+			 *
+			 * @param string $value Size to render. Options are 'normal', 'compact', and 'invisible'.
+			 */
+			apply_filters( 'constant_contact_turnstile_size', 'normal', $form_id )
+		);
+
+		$turnstile->set_language(
+			/**
+			 * Filters the language code to be used with turnstile.
+			 *
+			 * See https://developers.cloudflare.com/turnstile/reference/supported-languages/ for available values.
+			 *
+			 * @since 2.16.0
+			 *
+			 * @param string $value   Language code to use. Default '' for automatic detection.
+			 * @param int    $form_id ID of the form being rendered.
+			 */
+			apply_filters( 'constant_contact_turnstile_lang', '', $form_id )
+		);
+
+		$turnstile->set_mode(
+			/**
+			 * Set the turnstile Mode to use.
+			 *
+			 * @since 2.16.0
+			 *
+			 * @param string $value   Use 'live' (default) or 'test' mode. In 'test' mode, predefined keys are used.
+			 * @param int    $form_id ID of the form being rendered.
+			 */
+			apply_filters( 'constant_contact_turnstile_mode', 'live', $form_id )
+		);
+
+		return $turnstile->get_inline_markup();
+	}
+
+	/**
 	 * Render a hidden input field storing the current time.
 	 *
 	 * @since 1.2.4
@@ -859,10 +943,10 @@ class ConstantContact_Display {
 			case 'address':
 				$value = ! empty( $value ) ? $value : [];
 				return $this->address( $name, $map, $value, $desc, $req, $field_error, $form_id, $label_placement, $instance );
-			case 'anniversery':
+			case 'anniversary':
+				return $this->anniversary( $name, $map, $value, $desc, $req, false, $field_error, $form_id, $label_placement, $instance );
 			case 'birthday':
-				// Need this to be month / day / year.
-				return $this->dates( $name, $map, $value, $desc, $req, $field_error, $instance );
+				return $this->birthday( $name, $map, $value, $desc, $req, false, $field_error, $form_id, $label_placement, $instance );
 			default:
 				return $this->input( 'text', $name, $map, $value, $desc, $req, false, $field_error );
 		}
@@ -1110,7 +1194,7 @@ class ConstantContact_Display {
 	 * @param  int     $instance        Current form instance.
 	 * @return string                   HTML markup for field.
 	 */
-	public function input( string $type = 'text', string $name = '', string $id = '', string $value = '', string $label = '', bool $req = false, bool $f_only = false, bool $field_error = false, int $form_id = 0, string $label_placement = '', int $instance = 0 ) : string {
+	public function input( string $type = 'text', string $name = '', string $id = '', string $value = '', string $label = '', bool $req = false, bool $f_only = false, bool $field_error = false, int $form_id = 0, string $label_placement = '', int $instance = 0, bool $show_label = true, string $date_part = '' ) : string {
 		$id_salt               = wp_rand();
 		$name                  = sanitize_text_field( $name );
 		$field_key             = sanitize_title( $id );
@@ -1132,7 +1216,7 @@ class ConstantContact_Display {
 		$type     = sanitize_text_field( $type );
 		$value    = sanitize_text_field( $value );
 		$label    = esc_html( sanitize_text_field( $label ) );
-		$req_text = $req ? 'required' : '';
+		$req_text = $req ? 'required aria-required="true" ' : 'aria-required="false" ';
 
 		$markup = $this->field_top( $type, $name, $field_key, $label, $req );
 
@@ -1141,12 +1225,13 @@ class ConstantContact_Display {
 		if ( $req ) {
 			$req_label = $this->display_required_indicator();
 		}
-		if ( ( 'top' === $label_placement || 'left' === $label_placement || 'hidden' === $label_placement ) && ( 'submit' !== $type ) ) {
+		if ( $show_label && ( 'top' === $label_placement || 'left' === $label_placement || 'hidden' === $label_placement ) && ( 'submit' !== $type ) ) {
 			if ( $inline_font_styles ) {
 				$markup .= '<span class="' . $label_placement_class . '"  style="' . $inline_font_styles . '">';
 			} else {
 				$markup .= '<span class="' . $label_placement_class . '">';
 			}
+
 			$markup .= $this->get_label( $field_id, $name . ' ' . $req_label );
 			$markup .= '</span>';
 		}
@@ -1205,8 +1290,23 @@ class ConstantContact_Display {
 			$placeholder = "placeholder=\"$label\"";
 		}
 
+		$minmax = '';
+		if ( ! empty( $date_part ) ) {
+			if ( 'year' === $date_part ) {
+				$minmax = 'maxlength="4" min="1900" max="2035"';
+			}
+			if ( 'month' === $date_part ) {
+				$minmax = 'maxlength="2" min="1" max="12"';
+			}
+			if ( 'day' === $date_part ) {
+				$minmax = 'maxlength="2" min="1" max="31"';
+			}
+			// Preprend our date part to get unique field name
+			$field_key = $date_part . '_' . $field_key;
+		}
+
 		/* 1: Required text, 2: Field type, 3: Field name, 4: Inline styles, 5: Field value, 6: Max length, 7: Placeholder, 8: Field class(es), 9: Field ID., 10: Tel Regex Pattern. */
-		$field   = '<input %1$s type="%2$s" id="%3$s" name="%4$s" %5$s value="%6$s" class="%7$s" %8$s %9$s %10$s />';
+		$field   = '<input %1$s type="%2$s" id="%3$s" name="%4$s" %5$s value="%6$s" class="%7$s" %8$s %9$s %10$s %11$s />';
 		$markup .= sprintf(
 			$field,
 			$req_text, // %1$s starts here.
@@ -1218,14 +1318,20 @@ class ConstantContact_Display {
 			$class_attr,
 			$max_length,
 			$placeholder,
-			$tel_regex_pattern ? "pattern=\"$tel_regex_pattern\" title=\"$tel_pattern_title\"" : ''
+			$tel_regex_pattern ? "pattern=\"$tel_regex_pattern\" title=\"$tel_pattern_title\"" : '',
+			$minmax
 		);
 
 		// Reassign because if we want "field only", like for hidden inputs, we need to still pass a value that went through sprintf().
 		$field = $markup;
 
-		if ( ( 'bottom' === $label_placement || 'right' === $label_placement ) && ( 'submit' !== $type ) ) {
-			$markup .= '<span class="' . $label_placement_class . '">';
+		if ( $show_label && ( 'bottom' === $label_placement || 'right' === $label_placement ) && ( 'submit' !== $type ) ) {
+			if ( $inline_font_styles ) {
+				$markup .= '<span class="' . $label_placement_class . '"  style="' . $inline_font_styles . '">';
+			} else {
+				$markup .= '<span class="' . $label_placement_class . '">';
+			}
+
 			$markup .= $this->get_label( $field_id, $name . ' ' . $req_label );
 			$markup .= '</span>';
 		}
@@ -1522,7 +1628,7 @@ class ConstantContact_Display {
 
 		$req_label             = $req ? ' ' . $this->display_required_indicator() : '';
 		$req_class             = $req ? ' ctct-form-field-required ' : '';
-		$req                   = $req ? ' required ' : '';
+		$req                   = $req ? ' required aria-required="true" ' : 'aria-required="false" ';
 		$label_placement_class = 'ctct-label-' . $label_placement;
 		$inline_font_styles    = $this->get_inline_font_color();
 
@@ -1536,7 +1642,7 @@ class ConstantContact_Display {
 			foreach ( $included_address_fields as $field ) {
 				// These can be left alone for each iteration. No need to make field-specific variables.
 				$is_required_bool = ( ! empty( $required_address_fields ) && in_array( $field, $required_address_fields, true ) );
-				$is_required      = ( ! empty( $required_address_fields ) && in_array( $field, $required_address_fields, true ) ) ? 'required ' : '';
+				$is_required      = ( ! empty( $required_address_fields ) && in_array( $field, $required_address_fields, true ) ) ? 'required aria-required="true" ' : 'aria-required="false" ';
 
 				// Reassigning in this context
 				$req_class   = $is_required_bool ? 'ctct-form-field-required' : '';
@@ -1811,206 +1917,32 @@ class ConstantContact_Display {
 		}
 	}
 
-	/**
-	 * Gets and return a 3-part date selector.
-	 *
-	 * @since 1.0.0
-	 *
-	 * @param  string  $name        Name of field.
-	 * @param  string  $f_id        Field ID.
-	 * @param  array   $value       Values to pre-fill.
-	 * @param  string  $desc        Description of fields.
-	 * @param  boolean $req         If is required.
-	 * @param  string  $field_error Field error text.
-	 * @param  int     $instance    Current form instance.
-	 * @return string               Fields HTML markup.
-	 */
-	public function dates( string $name = '', string $f_id = '', array $value = [], string $desc = '', bool $req = false, string $field_error = '', int $instance = 0 ) : string {
-		$month = esc_html__( 'Month', 'constant-contact-forms' );
-		$day   = esc_html__( 'Day', 'constant-contact-forms' );
-		$year  = esc_html__( 'Year', 'constant-contact-forms' );
+	public function birthday( $name = '', $map = '', $value = '', $desc = '', $req = false, $f_only = false, $field_error = false, $form_id = 0, $label_placement = '', $instance = 0 ) {
+		$return = '';
 
-		$v_month = $value['month'] ?? '';
-		$v_day   = $value['day'] ?? '';
-		$v_year  = $value['year'] ?? '';
-
-		$req_class = $req ? ' ctct-form-field-required ' : '';
-
-		$return  = '<p class="ctct-date"><fieldset>';
-		$return .= ' <legend>' . esc_attr( $name ) . '</legend>';
-		$return .= ' <div class="ctct-form-field ctct-field-inline month' . $req_class . '">';
-		$return .= $this->get_date_dropdown( $month, $f_id, 'month', $v_month, $req, $instance );
-		$return .= ' </div>';
-		$return .= ' <div class="ctct-form-field ctct-field-inline day' . $req_class . '">';
-		$return .= $this->get_date_dropdown( $day, $f_id, 'day', $v_day, $req, $instance );
-		$return .= ' </div>';
-		$return .= ' <div class="ctct-form-field ctct-field-inline year' . $req_class . '">';
-		$return .= $this->get_date_dropdown( $year, $f_id, 'year', $v_year, $req, $instance );
-		$return .= ' </div>';
-
-		$return .= '</fieldset></p>';
+		$separator = $this->get_form_date_separator();
+		$return .= '<div class="ctct-form-fields ctct-birthday-fields ctct-birthday-label-' . $label_placement . '">';
+		$return .= $this->input( 'number', $name, $map, $value, 'MM', $req, false, $field_error, $form_id, $label_placement, $instance, true, 'month' );
+		$return .= '<span class="ctct-date-field-separator"> ' . esc_html( $separator ) . ' </span>';
+		$return .= $this->input( 'number', $name, $map, $value, 'DD', $req, false, $field_error, $form_id, $label_placement, $instance, false, 'day' );
+		$return .= '</div>';
 
 		return $return;
 	}
 
-	/**
-	 * Gets actual dropdowns for date selector.
-	 *
-	 * @since 1.0.0
-	 *
-	 * @param  string  $text           Text for default option.
-	 * @param  string  $field_key      Field ID.
-	 * @param  string  $type           Type of dropdown (day, month, year).
-	 * @param  string  $selected_value Previous value.
-	 * @param  boolean $req            If is require.
-	 * @param  int     $instance       Current form instance.
-	 * @return string                  Field markup.
-	 */
-	public function get_date_dropdown( string $text = '', string $field_key = '', string $type = '', string $selected_value = '', bool $req = false, int $instance = 0 ) : string {
-		$field_key = str_replace( 'birthday', 'birthday_' . $type, $field_key );
-		$field_key = str_replace( 'anniversary', 'anniversary_' . $type, $field_key );
-		$field_id  = "{$field_key}_{$instance}";
+	public function anniversary( $name = '', $map = '', $value = '', $desc = '', $req = false, $f_only = false, $field_error = false, $form_id = 0, $label_placement = '', $instance = 0 ) {
+		$return = '';
 
-		$return = '<select name="' . esc_attr( $field_key ) . '" class="ctct-date-select ctct-date-select-' . esc_attr( $type ) . '" id="' . $field_id . '">';
-
-		if ( $req ) {
-			$return = str_replace( '">', '" required>', $return );
-		}
-
-		$return .= $this->get_date_options( $text, $this->get_date_values( $type ), $selected_value );
-
-		$return .= '</select>';
+		$separator = $this->get_form_date_separator();
+		$return    .= '<div class="ctct-form-fields ctct-anniversary-fields ctct-anniversary-label-' . $label_placement . '">';
+		$return    .= $this->input( 'number', $name, $map, $value, 'MM', $req, false, $field_error, $form_id, $label_placement, $instance, true, 'month' );
+		$return    .= '<span class="ctct-date-field-separator"> ' . esc_html( $separator ) . ' </span>';
+		$return    .= $this->input( 'number', $name, $map, $value, 'DD', $req, false, $field_error, $form_id, $label_placement, $instance, false, 'day' );
+		$return .= '<span class="ctct-date-field-separator"> ' . esc_html( $separator ) . ' </span>';
+		$return .= $this->input( 'number', $name, $map, $value, 'YYYY', $req, false, $field_error, $form_id, $label_placement, $instance, false, 'year' );
+		$return    .= '</div>';
 
 		return $return;
-	}
-
-	/**
-	 * Gets option markup for a date selector.
-	 *
-	 * @since 1.0.0
-	 *
-	 * @param string $text                 Default first option.
-	 * @param array  $values               Values to use.
-	 * @param array  $prev_selected_values Previous selected values.
-	 * @return string HTML markup.
-	 */
-	public function get_date_options( string $text = '', array $values = [], $prev_selected_values = [] ) : string {
-		$return = '<option value="">' . sanitize_text_field( $text ) . '</option>';
-
-		if ( ! is_array( $values ) ) {
-			return $return;
-		}
-
-		foreach ( $values as $key => $value ) {
-
-			$key = sanitize_text_field( $key ?? '' );
-
-			$value = sanitize_text_field( $value ?? '' );
-
-			$return .= '<option value="' . $key . '">' . $value . '</option>';
-		}
-
-		return $return;
-	}
-
-	/**
-	 * Gets array of data for a date dropdown type.
-	 *
-	 * @since 1.0.0
-	 *
-	 * @param string $type Day, month, or year.
-	 * @return array Array of data.
-	 */
-	public function get_date_values( string $type ) : array {
-		$return = [];
-
-		switch ( $type ) {
-			case 'day':
-				/**
-				 * Filters the array of numbers used to indicate day of the month in numerals.
-				 *
-				 * @since 1.0.0
-				 *
-				 * @param array $value Array of numbers ranging from 1 to 31.
-				 */
-				$return = apply_filters( 'constant_contact_dates_day', $this->get_days() );
-				break;
-			case 'month':
-				/**
-				 * Filters the array of months used for dropdown.
-				 *
-				 * @since 1.0.0
-				 *
-				 * @param array $value Array of months from calendar.
-				 */
-				$return = apply_filters(
-					'constant_contact_dates_month',
-					[
-						'january'   => esc_html__( 'January', 'constant-contact-forms' ),
-						'february'  => esc_html__( 'February', 'constant-contact-forms' ),
-						'march'     => esc_html__( 'March', 'constant-contact-forms' ),
-						'april'     => esc_html__( 'April', 'constant-contact-forms' ),
-						'may'       => esc_html__( 'May', 'constant-contact-forms' ),
-						'june'      => esc_html__( 'June', 'constant-contact-forms' ),
-						'july '     => esc_html__( 'July ', 'constant-contact-forms' ),
-						'august'    => esc_html__( 'August', 'constant-contact-forms' ),
-						'september' => esc_html__( 'September', 'constant-contact-forms' ),
-						'october'   => esc_html__( 'October', 'constant-contact-forms' ),
-						'november'  => esc_html__( 'November', 'constant-contact-forms' ),
-						'december'  => esc_html__( 'December', 'constant-contact-forms' ),
-					]
-				);
-				break;
-			case 'year':
-				/**
-				 * Filters the array of years, starting from 1910 to present.
-				 *
-				 * @since 1.0.0
-				 *
-				 * @param array $value Array of years.
-				 */
-				$return = apply_filters( 'constant_contact_dates_year', $this->get_years() );
-				break;
-		}
-
-		return $return;
-	}
-
-	/**
-	 * Helper method to get all years.
-	 *
-	 * @since 1.0.0
-	 *
-	 * @return array Years from 1910-current year.
-	 */
-	public function get_years() : array {
-		$years      = [];
-		$year_range = range( 1910, gmdate( 'Y' ) );
-		$year_range = array_reverse( $year_range );
-
-		foreach ( $year_range as $year ) {
-			$years[ $year ] = $year;
-		}
-
-		return $years;
-	}
-
-	/**
-	 * Gets array of 1-31.
-	 *
-	 * @since 1.0.0
-	 *
-	 * @return array Array of days.
-	 */
-	public function get_days() : array {
-		$days      = [];
-		$day_range = range( 1, 31 );
-
-		foreach ( $day_range as $day ) {
-			$days[ $day ] = $day;
-		}
-
-		return $days;
 	}
 
 	/**
@@ -2034,7 +1966,7 @@ class ConstantContact_Display {
 		$classes          = [ 'ctct-form-field', 'comment-form-comment' ];
 		$textarea_classes = [ 'ctct-textarea' ];
 		$field_id         = "{$map}_$instance";
-		$req_text         = $req ? 'required' : '';
+		$req_text         = $req ? 'required aria-required="true" ' : 'aria-required="false" ';
 
 		if ( $req ) {
 			$classes[] = 'ctct-form-field-required';
@@ -2156,7 +2088,7 @@ class ConstantContact_Display {
 				sprintf(
 					'<a href="%1$s" target="_blank" rel="noopener noreferrer" aria-label="%2$s">%3$s</a>',
 					esc_url( 'https://www.constantcontact.com/legal/about-constant-contact' ),
-					esc_attr__( 'About Constant Contact, opens a new window', 'constant-contact-forms' ),
+					esc_attr__( 'Emails are serviced by Constant Contact, opens a new window', 'constant-contact-forms' ),
 					esc_html__( 'Emails are serviced by Constant Contact', 'constant-contact-forms' )
 				)
 			);
@@ -2189,6 +2121,27 @@ class ConstantContact_Display {
 	}
 
 	/**
+	 * Return the character to use to seprate out date fields visually.
+	 *
+	 * Used between year, month, date fields display, as needed.
+	 *
+	 * @since 2.15.0
+	 * @return string
+	 */
+	public function get_form_date_separator() : string {
+		// https://en.wikipedia.org/wiki/List_of_date_formats_by_country
+		/**
+		 * Filters the character to use to separate out the date fields visually.
+		 *
+		 * @since 2.15.0
+		 *
+		 * @param  string $value Character to use for visual separator.
+		 * @return string
+		 */
+		return (string) apply_filters( 'constant_contact_form_date_separator', '/' );
+	}
+
+	/**
 	 * Get the inline font color.
 	 *
 	 * @since 1.4.3
@@ -2212,14 +2165,16 @@ class ConstantContact_Display {
 	 * @return string The required indicator markup.
 	 */
 	public function display_required_indicator() : string {
+
+		$title_attr = esc_attr__( 'This is a required field', 'constant-contact-forms' );
 		/**
 		 * Filters the markup used for the required indicator.
 		 *
 		 * @since 1.0.0
 		 *
-		 * @param string $value An `<abbr>` tag with an asterisk indicating required status.
+		 * @param string $value A `<span>` tag with an asterisk indicating required status.
 		 */
-		return apply_filters( 'constant_contact_required_label', '<abbr title="required">*</abbr>' );
+		return apply_filters( 'constant_contact_required_label', '<span class="ctct-required-indicatior" title="' . esc_attr( $title_attr ) .'">*</span>' );
 	}
 
 	/**

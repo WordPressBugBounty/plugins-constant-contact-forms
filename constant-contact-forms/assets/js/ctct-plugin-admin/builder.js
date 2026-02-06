@@ -198,7 +198,8 @@ window.CTCTBuilder = {};
 					'#_ctct_form_padding_bottom',
 					'#_ctct_form_padding_left',
 					'#_ctct_form_padding_right',
-					'#_ctct_input_custom_classes'
+					'#_ctct_input_custom_classes',
+					'#_ctct_form_max_width'
 				];
 
 				textFields.forEach((textSelector) => {
@@ -419,7 +420,12 @@ window.CTCTBuilder = {};
 						if ('custom' === map.value) {
 							fieldLabel.classList.add('form-field-is-custom-field');
 						} else {
-							fieldLabel.classList.remove('form-field-is-custom-field')
+							fieldLabel.classList.remove('form-field-is-custom-field');
+						}
+						if ('custom' === map.value || 'custom_text_area' === map.value) {
+							fieldLabel.setAttribute('maxlength', '50');
+						} else {
+							fieldLabel.removeAttribute('maxlength');
 						}
 					}
 				}

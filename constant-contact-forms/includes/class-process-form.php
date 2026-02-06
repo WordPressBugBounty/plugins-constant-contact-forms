@@ -10,8 +10,8 @@
  * phpcs:disable WebDevStudios.All.RequireAuthor -- Don't require author tag in docblocks.
  */
 
-use \ReCaptcha\ReCaptcha;
-use \ReCaptcha\RequestMethod\CurlPost;
+use ConstantContact\ConstantContactForms\ReCaptcha\ReCaptcha;
+use ConstantContact\ConstantContactForms\ReCaptcha\RequestMethod\CurlPost;
 use Ctct\Exceptions\CtctException;
 /**
  * Powers our form processing, validation, and value cleanup.
@@ -330,7 +330,7 @@ class ConstantContact_Process_Form {
 
 				return [
 					'status' => 'named_error',
-					'error'  => __( 'Failed hCaptcha check', 'constant-contact-forms' ),
+					'error'  => esc_html__( 'Failed hCaptcha check', 'constant-contact-forms' ),
 				];
 			}
 		}
@@ -341,6 +341,47 @@ class ConstantContact_Process_Form {
 			empty( $data['h-captcha-response'] )
 			&& ConstantContact_hCaptcha::has_hcaptcha_keys() &&
 			'hcaptcha' === $captcha_sevice->get_selected_captcha_service()
+		) {
+			return $spam_error_response;
+		}
+
+		// Handle verifying turnstile response.
+		if ( isset( $data['cf-turnstile-response'] ) && 'turnstile' === $captcha_sevice->get_selected_captcha_service() ) {
+			$ctctturnstile = new ConstantContact_turnstile();
+			$ctctturnstile->set_turnstile_keys();
+			$keys = $ctctturnstile->get_turnstile_keys();
+
+			$turnstile_data = [
+				'secret'   => $keys['secret_key'],
+				'response' => $data['cf-turnstile-response']
+			];
+
+			$response = wp_remote_post(
+				'https://challenges.cloudflare.com/turnstile/v0/siteverify',
+				[
+					'headers' => 'Content-type: application/x-www-form-urlencoded',
+					'body' => http_build_query( $turnstile_data )
+				]
+			);
+
+			$turnstile_response_data = json_decode( wp_remote_retrieve_body( $response ) );
+			if ( is_wp_error( $response ) || 200 !== wp_remote_retrieve_response_code( $response ) || false === $turnstile_response_data->success ) {
+
+				constant_contact_maybe_log_it( 'turnstile', 'Failed to verify with Cloudflare Turnstile', $turnstile_response_data->{'error-codes'} );
+
+				return [
+					'status' => 'named_error',
+					'error'  => esc_html__( 'Failed Cloudflare Turnstile check', 'constant-contact-forms' ),
+				];
+			}
+		}
+
+		// Check for case where turnstile is enabled but response was missing.
+		if (
+			! $maybe_disable_captcha &&
+			empty( $data['cf-turnstile-response'] )
+			&& ConstantContact_turnstile::has_turnstile_keys() &&
+			'turnstile' === $captcha_sevice->get_selected_captcha_service()
 		) {
 			return $spam_error_response;
 		}
@@ -395,7 +436,8 @@ class ConstantContact_Process_Form {
 				'ctct_time',
 				'ctct_usage_field',
 				'g-recaptcha-response',
-				'h-recaptcha-response',
+				'h-captcha-response',
+				'cf-turnstile-response',
 				'ctct_must_opt_in',
 				'ctct-instance',
 			],
@@ -692,17 +734,22 @@ class ConstantContact_Process_Form {
 					$return[ 'zip_address___' . $hashed_key ]['_ctct_map_select'] = 'zip';
 
 					break;
-				case 'anniversery':
+				case 'anniversary':
+					$return[ 'month_anniversary___' . $hashed_key ]                     = $field_key;
+					$return[ 'month_anniversary___' . $hashed_key ]['_ctct_map_select'] = 'month_anniversary';
+
+					$return[ 'day_anniversary___' . $hashed_key ]                     = $field_key;
+					$return[ 'day_anniversary___' . $hashed_key ]['_ctct_map_select'] = 'day_anniversary';
+
+					$return[ 'year_anniversary___' . $hashed_key ]                     = $field_key;
+					$return[ 'year_anniversary___' . $hashed_key ]['_ctct_map_select'] = 'year_anniversary';
+					break;
 				case 'birthday':
-					$return[ 'month___' . $hashed_key ]                     = $field_key;
-					$return[ 'month___' . $hashed_key ]['_ctct_map_select'] = 'month';
+					$return[ 'month_birthday___' . $hashed_key ]                     = $field_key;
+					$return[ 'month_birthday___' . $hashed_key ]['_ctct_map_select'] = 'month_birthday';
 
-					$return[ 'day___' . $hashed_key ]                     = $field_key;
-					$return[ 'day___' . $hashed_key ]['_ctct_map_select'] = 'day';
-
-					$return[ 'year___' . $hashed_key ]                     = $field_key;
-					$return[ 'year___' . $hashed_key ]['_ctct_map_select'] = 'year';
-
+					$return[ 'day_birthday___' . $hashed_key ]                     = $field_key;
+					$return[ 'day_birthday___' . $hashed_key ]['_ctct_map_select'] = 'day_birthday';
 					break;
 				default:
 					$return[ $field['_ctct_map_select'] . '___' . $hashed_key ] = $field_key;

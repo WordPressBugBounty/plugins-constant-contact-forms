@@ -164,7 +164,7 @@ class ConstantContact_API {
 		$this->plugin = $plugin;
 		$this->scopes = array_flip( $this->valid_scopes );
 
-		add_action( 'init', [ $this, 'cct_init' ] );
+		add_action( 'cmb2_init', [ $this, 'ctct_init' ] );
 		add_action( 'ctct_refresh_token_job', [ $this, 'refresh_token' ] );
 		add_action( 'ctct_access_token_acquired', [ $this, 'clear_missed_api_requests' ] );
 	}
@@ -173,7 +173,12 @@ class ConstantContact_API {
 	 *
 	 * @since 1.0.0
 	 */
-	public function cct_init() {
+	public function ctct_init() {
+
+		// Early exit for heartbeat API.
+		if ( ! empty( $_POST['action'] ) && 'heartbeat' === sanitize_text_field( $_POST['action'] ) ) {
+			return false;
+		}
 
 		$this->this_user_id = get_current_user_id();
 
@@ -184,7 +189,6 @@ class ConstantContact_API {
 		// Attempt to acquire access token if we don't have it already.
 		// This fixes an issue where authorization does not work sometimes when switching between different accounts.
 		if (
-			empty( $this->expires_in ) ||
 			empty( $this->refresh_token ) ||
 			empty( $this->access_token )
 		) {
@@ -193,6 +197,10 @@ class ConstantContact_API {
 				update_option( 'ctct_access_token_timestamp', time() );
 			}
 		}
+
+		// Future API work. Perhaps a `$this->access_token_maybe_expired()` check here.
+		// Keep frequency of `init` hook in mind.
+		// Would also remove need to check for DISABLE_WP_CRON later.
 
 		// custom scheduling based on the expiry time returned with access token.
 		add_filter(
@@ -209,7 +217,9 @@ class ConstantContact_API {
 
 		if ( ! empty( $this->expires_in ) ) {
 			if ( ! wp_next_scheduled( 'ctct_refresh_token_job' ) ) { // if it hasn't been scheduled
-				wp_schedule_event( time(), 'pkce_expiry', 'ctct_refresh_token_job' ); // schedule it
+				$result = wp_schedule_event( time(), 'pkce_expiry', 'ctct_refresh_token_job' ); // schedule it
+				$success = ( false === $result ) ? 'no' : 'yes';
+				constant_contact_maybe_log_it( 'Cron scheduled: ', $success );
 			}
 		} else {
 			wp_unschedule_hook( 'ctct_refresh_token_job' );
@@ -241,15 +251,34 @@ class ConstantContact_API {
 	 * @return string Access API token.
 	 */
 	public function get_api_token() {
-
 		$token = '';
 
+		// Fetch current access token, expired or not.
 		if ( constant_contact()->get_connect()->e_get( '_ctct_access_token' ) ) {
-			$token .= constant_contact()->get_connect()->e_get( '_ctct_access_token' );
-		} else {
-			$success = $this->acquire_access_token();
-			if ( $success ) {
-				update_option( 'ctct_access_token_timestamp', time() );
+			$token = constant_contact()->get_connect()->e_get( '_ctct_access_token' );
+		}
+
+		// We are accepting that we may still have "one hour" of potential valid access token time.
+		// We would rather refresh early than risk getting expired.
+		$issued_time = (int) get_option( 'ctct_access_token_timestamp', 0 );
+		$current     = time();
+		$threshold   = $current - $issued_time;
+		// Check if we should attempt a refresh, beyond just cron checks.
+		if ( $issued_time > 0 && $threshold >= 82800 ) {
+			// This should not be reached constantly. Once we have a new token,
+			// the threshold won't be within time.
+			// This method is more readily called than potential cron requests, so
+			// hopefully we're more actively refreshed.
+			$result = $this->refresh_token();
+
+			if ( ! $result ) {
+				constant_contact_maybe_log_it( 'API', 'Refresh token attempt failed in get_api_token.' );
+				$token = ''; // Reset to default from this method.
+			}
+
+			if ( $result ) {
+				// Should be new access token.
+				$token = constant_contact()->get_connect()->e_get( '_ctct_access_token' );
 			}
 		}
 
@@ -345,11 +374,11 @@ class ConstantContact_API {
 
 		if ( false === $contacts ) {
 			try {
-				$contacts = $this->cc()->get_contacts( $this->get_api_token() );
+				$contacts = $this->cc()->get_contacts();
 				if ( array_key_exists( 'error_key', $contacts ) && 'unauthorized' === $contacts['error_key'] ) {
 					$this->refresh_token();
 
-					$contacts = $this->cc()->get_contacts( $this->get_api_token() );
+					$contacts = $this->cc()->get_contacts();
 				}
 
 				set_transient( 'ctct_contact', $contacts, 1 * DAY_IN_SECONDS );
@@ -990,13 +1019,17 @@ class ConstantContact_API {
 
 		unset( $user_data['list'] );
 
-		$address   = null;
+		$address   = [];
 		$count     = 1;
 		$streets   = [];
 		if ( ! $updated ) {
 			$contact->notes = [];
 		}
 
+		$address_type = get_post_meta( $form_id, '_ctct_address_type', true );
+		if ( empty( $address_type ) ) {
+			$address_type = 'home';
+		}
 		foreach ( $user_data as $original => $value ) {
 			$key   = sanitize_text_field( $value['key'] ?? false );
 			$value = sanitize_text_field( $value['val'] ?? false );
@@ -1011,6 +1044,9 @@ class ConstantContact_API {
 				case 'lists':
 				case 'h-captcha-response':
 				case 'g-captcha-response':
+				case 'day_anniversary': // Anniversary is already pieced together.
+				case 'nonth_anniversary':
+				case 'year_anniversary':
 					// Do nothing, as we already captured or handled elsewhere.
 					break;
 				case 'phone_number':
@@ -1025,11 +1061,7 @@ class ConstantContact_API {
 				case 'state_address':
 				case 'zip_address':
 				case 'country_address':
-					if ( null === $address ) {
-						$address = [];
-					}
-
-					$address['kind'] = 'home';
+					$address['kind'] = $address_type;
 
 					switch ( $key ) {
 						case 'street_address':
@@ -1052,12 +1084,15 @@ class ConstantContact_API {
 							$address['country'] = $value;
 					}
 					break;
-				case 'birthday_month':
-				case 'birthday_day':
-				case 'birthday_year':
-				case 'anniversery_day':
-				case 'anniversary_month':
-				case 'anniversary_year':
+				case 'month_birthday':
+					$contact->birthday_month = absint( $value );
+					break;
+				case 'day_birthday':
+					$contact->birthday_day = absint( $value );
+					break;
+				case 'anniversary':
+					$contact->anniversary = date( 'Y/m/d', strtotime( $value ) );
+					break;
 				case 'website':
 				case 'custom':
 					// Dont overload custom fields.
@@ -1143,15 +1178,6 @@ class ConstantContact_API {
 				);
 			}
 		}
-	}
-
-	/**
-	 * Rate limit ourselves to not bust API call rate limit.
-	 *
-	 * @since 1.0.0
-	 */
-	public function pause_api_calls() {
-		sleep( 1 );
 	}
 
 	/**
@@ -1286,10 +1312,31 @@ class ConstantContact_API {
 		return [ $code, $this->base64url_encode( pack( 'H*', hash( 'sha256', $code ) ) ) ];
 	}
 
+	/**
+	 * Base64 encode URL.
+	 *
+	 * @since 2.0.0
+	 *
+	 * @param string $data
+	 *
+	 * @return string
+	 */
 	private function base64url_encode( string $data ): string {
 		return rtrim( strtr( base64_encode( $data ), '+/', '-_' ), '=' );
 	}
 
+	/**
+	 * Handle user session details.
+	 *
+	 * Not used.
+	 *
+	 * @since 2.0.0
+	 *
+	 * @param string      $key
+	 * @param string|null $value
+	 *
+	 * @return mixed|string
+	 */
 	public function session( string $key, ?string $value ) {
 		if ( $this->session_callback ) {
 			return call_user_func( $this->session_callback, $key, $value );
@@ -1383,6 +1430,14 @@ class ConstantContact_API {
 	 */
 	public function acquire_access_token(): bool {
 
+		if ( ! empty( $_POST['action'] ) && 'heartbeat' === sanitize_text_field( $_POST['action'] ) ) {
+			return false;
+		}
+
+		if ( ! empty( $_POST['ctct-disconnect'] ) && 'true' === sanitize_text_field( $_POST['ctct-disconnect'] ) ) {
+			return false;
+		}
+
 		$code_state = (string) constant_contact_get_option( '_ctct_form_state_authcode', '' );
 
 		parse_str( $code_state, $parsed_code_state );
@@ -1448,6 +1503,11 @@ class ConstantContact_API {
 
 	/**
 	 * Refresh the access token.
+	 *
+	 * @since 2.0.0
+	 *
+	 * @return bool
+	 * @throws Exception
 	 */
 	public function refresh_token(): bool {
 
@@ -1477,6 +1537,7 @@ class ConstantContact_API {
 		$result = $this->exec( $url, $options );
 
 		if ( false === $result ) {
+			constant_contact_maybe_log_it( 'Refresh Token:', 'Expired. Refresh attempted at ' . current_datetime()->format( 'Y-n-d, H:i' ) );
 			constant_contact_set_needs_manual_reconnect( 'true' );
 		} else {
 			delete_transient( 'ctct_lists' );
@@ -1487,6 +1548,12 @@ class ConstantContact_API {
 		return $result;
 	}
 
+	/**
+	 * Set our authorization headers.
+	 *
+	 * @since 2.0.0
+	 * @return string[]
+	 */
 	private function set_authorization(): array {
 
 		// Set authorization header
@@ -1500,6 +1567,17 @@ class ConstantContact_API {
 		return $headers;
 	}
 
+	/**
+	 * Execute our API request for token acquisition.
+	 *
+	 * @since 2.0.0
+	 *
+	 * @param string $url     URL to make request to.
+	 * @param array  $options Request options.
+	 *
+	 * @return bool
+	 * @throws Exception
+	 */
 	private function exec( $url, $options ): bool {
 		$response = wp_safe_remote_post( $url, $options );
 
@@ -1508,7 +1586,11 @@ class ConstantContact_API {
 
 		if ( ! is_wp_error( $response ) ) {
 
-			$data = json_decode( $response['body'], true );
+			$data            = json_decode( $response['body'], true );
+			$json_last_error = $this->get_json_error_message( json_last_error() );
+			if ( ! empty( $json_last_error ) ) {
+				constant_contact_maybe_log_it( 'JSON Error: ', $json_last_error );
+			}
 
 			// check if the body contains error
 			if ( isset( $data['error'] ) ) {
@@ -1522,8 +1604,8 @@ class ConstantContact_API {
 
 			if ( ! empty( $data['access_token'] ) ) {
 
-				constant_contact_maybe_log_it( 'Refresh Token:', 'Old Refresh Token: ' . $this->obfuscate_api_data_item( $this->refresh_token ) );
-				constant_contact_maybe_log_it( 'Access Token:', 'Old Access Token: ' . $this->obfuscate_api_data_item( $this->access_token ) );
+				constant_contact_maybe_log_it( 'Refresh Token: ', 'Old Refresh Token: ' . $this->obfuscate_api_data_item( $this->refresh_token ) );
+				constant_contact_maybe_log_it( 'Access Token: ', 'Old Access Token: ' . $this->obfuscate_api_data_item( $this->access_token ) );
 
 				constant_contact()->get_connect()->e_set( '_ctct_access_token', $data['access_token'] );
 				constant_contact()->get_connect()->e_set( '_ctct_refresh_token', $data['refresh_token'] );
@@ -1534,11 +1616,16 @@ class ConstantContact_API {
 				$this->expires_in    = $data['expires_in'] ?? '';
 
 				delete_option( 'ctct_auth_url' );
+				$dateObj    = current_datetime();
+				$expDateObj = $dateObj->modify( '+' . $data['expires_in'] . ' seconds' );
 
-				constant_contact_maybe_log_it( 'Refresh Token:', 'Refresh token successfully received' );
-				constant_contact_maybe_log_it( 'Refresh Token:', 'New Refresh Token: ' . $this->obfuscate_api_data_item( $this->refresh_token ) );
-				constant_contact_maybe_log_it( 'Access Token:', 'New Access Token: ' . $this->obfuscate_api_data_item( $this->access_token ) );
-				constant_contact_maybe_log_it( 'Expires in:', 'Expiry: ' . $this->expires_in );
+				constant_contact_maybe_log_it( 'Refresh Token: ', 'Refresh token successfully received' );
+				constant_contact_maybe_log_it( 'Refresh Token: ', 'New Refresh Token: ' . $this->obfuscate_api_data_item( $this->refresh_token ) );
+				constant_contact_maybe_log_it( 'Access Token: ', 'New Access Token: ' . $this->obfuscate_api_data_item( $this->access_token ) );
+				constant_contact_maybe_log_it(
+					'Expiration time:',
+					'Current time: ' . $dateObj->format( 'Y-n-d, H:i' ) . ' Estimated expiration time: ' . $expDateObj->format( 'Y-n-d, H:i' )
+				);
 
 				return isset( $data['access_token'], $data['refresh_token'] );
 			}
@@ -1551,7 +1638,18 @@ class ConstantContact_API {
 		return false;
 	}
 
-	private function obfuscate_api_data_item( $data_item ) {
+	/**
+	 * Obfuscate a value in our debug logs.
+	 *
+	 * Helps keep things private and not put into a potentially publicly accessed file.
+	 *
+	 * @since 2.1.0
+	 *
+	 * @param string $data_item Item to obfuscate.
+	 *
+	 * @return string
+	 */
+	private function obfuscate_api_data_item( string $data_item ): string {
 		$start = substr( $data_item, 0, 8 );
 		return $start . '***';
 	}
@@ -1615,16 +1713,13 @@ class ConstantContact_API {
 
 		$issued_time = get_option( 'ctct_access_token_timestamp', '' );
 		if ( empty( $issued_time ) ) {
-			return true;
+			// It's not expired because it doesn't exist.
+			// This should be filled in by now though.
+			return false;
 		}
 
-		$expires_in = constant_contact()->get_connect()->e_get( '_ctct_expires_in' );
-		if ( ! empty( $this->expires_in ) ) {
-			// Prioritize our property over the option. If this is set, it's probably fresher.
-			$expires_in = $this->expires_in;
-		}
 		$current_time = time();
-		$expiration_time = $issued_time + $expires_in;
+		$expiration_time = (int) $issued_time + (int) $this->expires_in;
 
 		// If we're currently above the expiration time, we're expired.
 		return $current_time >= $expiration_time;
@@ -1758,6 +1853,36 @@ class ConstantContact_API {
 	 */
 	public function set_email_type() {
 		return 'text/html';
+	}
+
+	/**
+	 * Set a message for potential JSON errors with our API request.
+	 *
+	 * @since 2.16.0
+	 *
+	 * @param $error_code JSON Error
+	 *
+	 * @return string
+	 */
+	private function get_json_error_message( $error_code ) {
+		$msg = '';
+		switch ( json_last_error() ) {
+			case JSON_ERROR_NONE:
+				break;
+			case JSON_ERROR_CTRL_CHAR:
+				$msg .= 'Unexpected control character found';
+				break;
+			case JSON_ERROR_SYNTAX:
+				$msg .= 'Syntax error, malformed JSON';
+				break;
+			case JSON_ERROR_UTF8:
+				$msg .= 'Malformed UTF-8 characters, possibly incorrectly encoded';
+				break;
+			default:
+				break;
+		}
+
+		return $msg;
 	}
 }
 

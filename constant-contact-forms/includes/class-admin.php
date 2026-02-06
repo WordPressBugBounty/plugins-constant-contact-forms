@@ -203,11 +203,17 @@ class ConstantContact_Admin {
 							'<a class="ctct-item%s" href="%s">%s</a>',
 							! empty( $tab['is_active'] ) ? ' is-active' : '',
 							esc_url( $tab['url'] ),
-							esc_html( $tab['text'] )
+							wp_kses( $tab['text'], [ 'span' => [ 'class' => [] ] ] )
 						);
 						echo wp_kses( '</li>', [ 'li' => [] ] );
 					}
 					echo wp_kses( '</ul>', [ 'ul' => [] ] );
+				}
+
+				if ( constant_contact_maybe_show_cron_notification() ) {
+				?>
+				<div class="ctct-status ctct-cron-status" title="<?php esc_attr_e( 'It looks like you have DISABLE_WP_CRON enabled. Constant Contact Forms relies on it to keep access tokens refreshed. You may see functionality issues if you do not have any manually configured cron jobs on your hosting server.', 'constant-contact-forms' ); ?>"><?php esc_html_e( 'WP CRON Disabled', 'constant-contact-forms' ); ?></div>
+				<?php
 				}
 				?>
 				<a href="edit.php?post_type=ctct_forms&page=ctct_options_connect" class="ctct-status ctct-<?php echo esc_attr( $api_status ); ?>" title="<?php echo esc_attr( $connect_alt ); ?>">
@@ -347,7 +353,7 @@ class ConstantContact_Admin {
 
 		$columns['description'] = esc_html__( 'Description', 'constant-contact-forms' );
 		$columns['shortcodes']  = esc_html__( 'Shortcode', 'constant-contact-forms' );
-		$columns['ctct_list']   = esc_html__( 'Associated List', 'constant-contact-forms' );
+		$columns['ctct_list']   = esc_html__( 'Associated list', 'constant-contact-forms' );
 
 		return $columns;
 	}

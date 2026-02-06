@@ -9,8 +9,9 @@
  * phpcs:disable WebDevStudios.All.RequireAuthor -- Don't require author tag in docblocks.
  */
 
-use Monolog\Logger;
-use Monolog\Handler\StreamHandler;
+use ConstantContact\ConstantContactForms\Monolog\Formatter\LineFormatter;
+use ConstantContact\ConstantContactForms\Monolog\Logger;
+use ConstantContact\ConstantContactForms\Monolog\Handler\StreamHandler;
 
 /**
  * Checks to see if a user is connected to Constant Contact or not.
@@ -287,8 +288,11 @@ function constant_contact_maybe_log_it( $log_name, $error, $extra_data = '' ) {
 		return;
 	}
 
-	$logger = new Logger( $log_name );
-	$logger->pushHandler( new StreamHandler( $logging_file ) );
+	$logger    = new Logger( $log_name );
+	$formatter = new LineFormatter( null, 'Y-n-d, H:i' );
+	$stream    = new StreamHandler( $logging_file );
+	$stream->setFormatter( $formatter );
+	$logger->pushHandler( $stream );
 	$extra = [];
 
 	if ( $extra_data ) {
@@ -764,4 +768,69 @@ function constant_contact_should_hide_disable_admin_email() : bool {
 	}
 
 	return $show;
+}
+
+/**
+ * Touch of CSS that needs to be added regardless of place in WP admin.
+ *
+ * @since 2.14.0
+ */
+function constant_contact_global_admin_css() {
+	if ( ! constant_contact_get_needs_manual_reconnect() ) {
+		return;
+	}
+?>
+	<style>
+		.dashicons.ctct-menu-icon {
+			margin: 0 5px;
+		}
+	</style>
+<?php
+}
+add_action( 'admin_head', 'constant_contact_global_admin_css' );
+
+/**
+ * Get the order in which a date format is in.
+ *
+ * Not used yet as of 2.15.0
+ *
+ * @since 2.15.0
+ *
+ * @param string $format Date format string.
+ *
+ * @return array
+ */
+function constant_contact_get_date_field_order( $format = '' ) {
+	if ( empty( $format ) ) {
+		$format = get_option( 'date_format' );
+	}
+	$order  = [];
+	$length = strlen( $format );
+
+	for ( $i = 0; $i < $length; $i ++ ) {
+		$char = $format[ $i ];
+
+		// Check if it's a year character and we haven't added year yet
+		$isYear       = in_array( $char, [ 'Y', 'y' ] );
+		$yearNotAdded = ! in_array( 'year', $order );
+		if ( $isYear && $yearNotAdded ) {
+			$order[] = 'year';
+		}
+
+		// Check if it's a month character and we haven't added month yet
+		$isMonth       = in_array( $char, [ 'm', 'n', 'M', 'F' ] );
+		$monthNotAdded = ! in_array( 'month', $order );
+		if ( $isMonth && $monthNotAdded ) {
+			$order[] = 'month';
+		}
+
+		// Check if it's a day character and we haven't added day yet
+		$isDay       = in_array( $char, [ 'd', 'j' ] );
+		$dayNotAdded = ! in_array( 'day', $order );
+		if ( $isDay && $dayNotAdded ) {
+			$order[] = 'day';
+		}
+	}
+
+	return $order;
 }
