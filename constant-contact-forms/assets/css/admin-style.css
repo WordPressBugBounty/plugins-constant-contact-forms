@@ -602,6 +602,9 @@
   color: #fff;
   background-color: rgb(0, 151.3846153846, 246);
 }
+.wrap.ctct_options_connect .ctct-connection-notice {
+  color: #ff0000;
+}
 
 .ctct-connected-wrap .ctct-connection-details {
   display: flex;
@@ -908,13 +911,6 @@ body.post-type-ctct_forms #titlediv #title {
   padding-bottom: 0.8em;
   padding-top: 0.8em;
 }
-#ctct_0_description_metabox button.cmb-add-group-row,
-#ctct_1_optin_metabox button.cmb-add-group-row,
-#ctct_2_fields_metabox button.cmb-add-group-row {
-  background: #008ec2 !important;
-  border-color: #006799 !important;
-  color: #fff !important;
-}
 #ctct_0_description_metabox button.cmb-remove-group-row,
 #ctct_1_optin_metabox button.cmb-remove-group-row,
 #ctct_2_fields_metabox button.cmb-remove-group-row {
@@ -998,8 +994,15 @@ body.post-type-ctct_forms #titlediv #title {
 #side-sortables #ctct_1_custom_input_css_metabox .cmb-type-text-small .cmb-th {
   padding-bottom: 0;
 }
-#side-sortables .cmb2-id--ctct-generated-shortcode > .cmb-th {
-  display: none;
+#side-sortables #ctct_1_custom_input_css_metabox .cmb2-id--ctct-form-padding-top,
+#side-sortables #ctct_1_custom_input_css_metabox .cmb2-id--ctct-form-padding-left,
+#side-sortables #ctct_1_custom_input_css_metabox .cmb2-id--ctct-form-padding-bottom,
+#side-sortables #ctct_1_custom_input_css_metabox .cmb2-id--ctct-form-padding-right {
+  padding-top: 0;
+}
+#side-sortables .cmb2-id--ctct-generated-shortcode > .cmb-th label {
+  font-weight: normal;
+  font-style: italic;
 }
 
 .cmb2-id--ctct-list .cmb2-list {
@@ -1071,6 +1074,10 @@ a.ctct-notice-dismiss {
 }
 .cmb2-options-page #ctct_option_metabox_settings_optin .button-ctct-not-connected {
   display: none;
+}
+.cmb2-options-page p.cmb2-metabox-description,
+.cmb2-options-page span.cmb2-metabox-description {
+  color: inherit;
 }
 
 .wp-admin .wrap.ctct-page-wrap {
@@ -1145,6 +1152,8 @@ a.ctct-notice-dismiss {
 }
 .wp-admin .ctct-shortcode-wrap {
   display: flex;
+  flex-direction: column;
+  gap: 8px;
   width: 100%;
   background-color: #fff;
   border: 1px solid #ddd;
@@ -1176,7 +1185,6 @@ a.ctct-notice-dismiss {
   box-shadow: none;
 }
 .wp-admin .ctct-shortcode-wrap button {
-  border-radius: 4px;
   z-index: 1;
 }
 
@@ -1269,6 +1277,12 @@ a.ctct-notice-dismiss {
 .cmb-type-ctct-forms-list-selection .cmb2-attached-posts-search-button span {
   color: #999;
   margin: 0.2em -0.2em 0 1px;
+}
+
+#ctct-recaptcha > div .cmb-th,
+#ctct-hcaptcha > div .cmb-th,
+#ctct-turnstile > div .cmb-th {
+  padding-left: 14px;
 }
 
 /*# sourceMappingURL=admin-style.css.map */
