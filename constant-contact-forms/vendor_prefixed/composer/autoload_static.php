@@ -4,7 +4,7 @@
 
 namespace ConstantContact\ConstantContactForms\Composer\Autoload;
 
-class ComposerStaticInitaffd60ec1d9504ff0418c4e15ba205e8
+class ComposerStaticInit8511f0f9594063df634c9e61529c24fe
 {
     public static $prefixLengthsPsr4 = array (
         'C' =>
@@ -194,9 +194,9 @@ class ComposerStaticInitaffd60ec1d9504ff0418c4e15ba205e8
     public static function getInitializer(ClassLoader $loader)
     {
         return \Closure::bind(function () use ($loader) {
-            $loader->prefixLengthsPsr4 = ComposerStaticInitaffd60ec1d9504ff0418c4e15ba205e8::$prefixLengthsPsr4;
-            $loader->prefixDirsPsr4 = ComposerStaticInitaffd60ec1d9504ff0418c4e15ba205e8::$prefixDirsPsr4;
-            $loader->classMap = ComposerStaticInitaffd60ec1d9504ff0418c4e15ba205e8::$classMap;
+            $loader->prefixLengthsPsr4 = ComposerStaticInit8511f0f9594063df634c9e61529c24fe::$prefixLengthsPsr4;
+            $loader->prefixDirsPsr4 = ComposerStaticInit8511f0f9594063df634c9e61529c24fe::$prefixDirsPsr4;
+            $loader->classMap = ComposerStaticInit8511f0f9594063df634c9e61529c24fe::$classMap;
 
         }, null, ClassLoader::class);
     }
