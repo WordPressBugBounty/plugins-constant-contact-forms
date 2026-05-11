@@ -884,6 +884,11 @@
   display: none;
 }
 
+#poststuff p.cmb2-metabox-description,
+#poststuff span.cmb2-metabox-description {
+  color: inherit;
+}
+
 body.post-type-ctct_lists .misc-pub-post-status {
   display: none;
 }
@@ -998,7 +1003,6 @@ body.post-type-ctct_forms #titlediv #title {
 #ctct_0_description_metabox button.cmb-remove-group-row,
 #ctct_1_optin_metabox button.cmb-remove-group-row,
 #ctct_2_fields_metabox button.cmb-remove-group-row {
-  background: #ffdfa3 !important;
   display: none;
 }
 #ctct_0_description_metabox .cmb2-metabox button.dashicons-before.dashicons-no-alt.cmb-remove-group-row,
@@ -1214,10 +1218,6 @@ a.ctct-notice-dismiss {
   height: 100%;
   border-radius: 4px;
 }
-.wp-admin hr {
-  border-top: none;
-  border-color: #ddd;
-}
 .wp-admin form.cmb-form h2 {
   margin: 0;
   padding: 14px;
@@ -1239,7 +1239,7 @@ a.ctct-notice-dismiss {
   align-self: flex-start;
   margin: 0 10px 0 0;
 }
-.wp-admin .ctct-shortcode-wrap {
+.wp-admin .ctct-shortcode-wrap.ssl {
   display: flex;
   flex-direction: column;
   gap: 8px;
@@ -1250,15 +1250,15 @@ a.ctct-notice-dismiss {
   padding: 3px;
   position: relative;
 }
-.wp-admin .ctct-shortcode-wrap:focus-within {
+.wp-admin .ctct-shortcode-wrap.ssl:focus-within {
   border-color: #747e88;
 }
-.wp-admin .ctct-shortcode-wrap input, .wp-admin .ctct-shortcode-wrap button {
+.wp-admin .ctct-shortcode-wrap.ssl input, .wp-admin .ctct-shortcode-wrap.ssl button {
   min-height: auto;
   height: 30px;
   font-size: 12px;
 }
-.wp-admin .ctct-shortcode-wrap input {
+.wp-admin .ctct-shortcode-wrap.ssl input {
   background-color: transparent;
   border: none;
   font-size: 12px;
@@ -1270,10 +1270,10 @@ a.ctct-notice-dismiss {
   text-overflow: ellipsis;
   white-space: nowrap;
 }
-.wp-admin .ctct-shortcode-wrap input:focus {
+.wp-admin .ctct-shortcode-wrap.ssl input:focus {
   box-shadow: none;
 }
-.wp-admin .ctct-shortcode-wrap button {
+.wp-admin .ctct-shortcode-wrap.ssl button {
   z-index: 1;
 }
 
@@ -1372,6 +1372,19 @@ a.ctct-notice-dismiss {
 #ctct-hcaptcha > div .cmb-th,
 #ctct-turnstile > div .cmb-th {
   padding-left: 14px;
+}
+
+.ctct-page-wrap .cmb2-wrap input:focus,
+.ctct-page-wrap .cmb2-wrap textarea:focus,
+.cmb2-postbox .cmb2-wrap input:focus,
+.cmb2-postbox .cmb2-wrap textarea:focus {
+  background: inherit;
+}
+.ctct-page-wrap .cmb2-wrap input:checked,
+.ctct-page-wrap .cmb2-wrap textarea:checked,
+.cmb2-postbox .cmb2-wrap input:checked,
+.cmb2-postbox .cmb2-wrap textarea:checked {
+  background: var(--wp-admin-theme-color);
 }
 
 /*# sourceMappingURL=admin-style.css.map */
