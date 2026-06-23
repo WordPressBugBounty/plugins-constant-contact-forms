@@ -1374,17 +1374,4 @@ a.ctct-notice-dismiss {
   padding-left: 14px;
 }
 
-.ctct-page-wrap .cmb2-wrap input:focus,
-.ctct-page-wrap .cmb2-wrap textarea:focus,
-.cmb2-postbox .cmb2-wrap input:focus,
-.cmb2-postbox .cmb2-wrap textarea:focus {
-  background: inherit;
-}
-.ctct-page-wrap .cmb2-wrap input:checked,
-.ctct-page-wrap .cmb2-wrap textarea:checked,
-.cmb2-postbox .cmb2-wrap input:checked,
-.cmb2-postbox .cmb2-wrap textarea:checked {
-  background: var(--wp-admin-theme-color);
-}
-
 /*# sourceMappingURL=admin-style.css.map */
