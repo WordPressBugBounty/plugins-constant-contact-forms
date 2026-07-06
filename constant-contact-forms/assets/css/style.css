@@ -113,14 +113,6 @@
   font-size: 0.85rem;
   font-style: italic;
 }
-.ctct-form-wrapper input.ctct-invalid {
-  background: #fff url(../images/error.svg) no-repeat;
-  background-color: rgba(255, 0, 0, 0.02);
-  background-position: 8px 50%;
-  background-size: 24px;
-  border-color: #ff0000;
-  padding-left: 40px;
-}
 .ctct-form-wrapper input.ctct-label-left,
 .ctct-form-wrapper textarea.ctct-label-left {
   display: inline-block;
