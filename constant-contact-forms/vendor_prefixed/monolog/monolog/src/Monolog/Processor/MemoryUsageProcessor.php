@@ -1,6 +1,5 @@
-<?php
+<?php declare(strict_types=1);
 
-declare (strict_types=1);
 /*
  * This file is part of the Monolog package.
  *
@@ -9,13 +8,15 @@ declare (strict_types=1);
  * For the full copyright and license information, please view the LICENSE
  * file that was distributed with this source code.
  */
+
 namespace ConstantContact\ConstantContactForms\Monolog\Processor;
 
 use ConstantContact\ConstantContactForms\Monolog\LogRecord;
+
 /**
  * Injects memory_get_usage in all records
  *
- * @see \ConstantContact\ConstantContactForms\Monolog\Processor\MemoryProcessor::__construct() for options
+ * @see ConstantContact\ConstantContactForms\Monolog\Processor\MemoryProcessor::__construct() for options
  * @author Rob Jensen
  */
 class MemoryUsageProcessor extends MemoryProcessor
@@ -26,10 +27,13 @@ class MemoryUsageProcessor extends MemoryProcessor
     public function __invoke(LogRecord $record): LogRecord
     {
         $usage = memory_get_usage($this->realUsage);
+
         if ($this->useFormatting) {
             $usage = $this->formatBytes($usage);
         }
+
         $record->extra['memory_usage'] = $usage;
+
         return $record;
     }
 }

@@ -35,14 +35,14 @@
  */
 
 spl_autoload_register(function ($class) {
-    if (substr($class, 0, 10) !== 'ConstantContact\\ConstantContactForms\\ReCaptcha\\') {
+    if (substr($class, 0, 10) !== 'ConstantContact\ConstantContactForms\ReCaptcha\\') {
         /* If the class does not lie under the "ConstantContact\ConstantContactForms\ReCaptcha" namespace,
          * then we can exit immediately.
          */
         return;
     }
 
-    /* All of the classes have names like "ConstantContact\ConstantContactForms\ReCaptcha\Foo", so we need
+    /* All of the classes have names like "ReCaptcha\Foo", so we need
      * to replace the backslashes with frontslashes if we want the
      * name to map directly to a location in the filesystem.
      */

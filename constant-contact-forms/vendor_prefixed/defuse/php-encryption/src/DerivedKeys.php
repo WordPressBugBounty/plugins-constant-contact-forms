@@ -4,7 +4,7 @@ namespace ConstantContact\ConstantContactForms\Defuse\Crypto;
 
 /**
  * Class DerivedKeys
- * @package \Defuse\Crypto
+ * @package Defuse\Crypto
  */
 final class DerivedKeys
 {
@@ -12,10 +12,12 @@ final class DerivedKeys
      * @var string
      */
     private $akey = '';
+
     /**
      * @var string
      */
     private $ekey = '';
+
     /**
      * Returns the authentication key.
      * @return string
@@ -24,6 +26,7 @@ final class DerivedKeys
     {
         return $this->akey;
     }
+
     /**
      * Returns the encryption key.
      * @return string
@@ -32,6 +35,7 @@ final class DerivedKeys
     {
         return $this->ekey;
     }
+
     /**
      * Constructor for DerivedKeys.
      *

@@ -15,7 +15,7 @@ namespace ConstantContact\ConstantContactForms\Composer\Autoload;
 /**
  * ClassLoader implements a PSR-0, PSR-4 and classmap class loader.
  *
- *     $loader = new \ConstantContact\ConstantContactForms\Composer\Autoload\ClassLoader();
+ *     $loader = new ConstantContact\ConstantContactForms\Composer\Autoload\ClassLoader();
  *
  *     // register classes with namespaces
  *     $loader->add('Symfony\Component', __DIR__.'/component');

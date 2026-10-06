@@ -28,9 +28,9 @@ use ConstantContact\ConstantContactForms\Monolog\LogRecord;
  *
  * Monolog setup:
  *
- * $logger = new \ConstantContact\ConstantContactForms\Monolog\Logger('fluent.tag');
- * $fluentHandler = new \ConstantContact\ConstantContactForms\Monolog\Handler\SocketHandler('unix:///var/run/td-agent/td-agent.sock');
- * $fluentHandler->setFormatter(new \ConstantContact\ConstantContactForms\Monolog\Formatter\FluentdFormatter());
+ * $logger = new ConstantContact\ConstantContactForms\Monolog\Logger('fluent.tag');
+ * $fluentHandler = new ConstantContact\ConstantContactForms\Monolog\Handler\SocketHandler('unix:///var/run/td-agent/td-agent.sock');
+ * $fluentHandler->setFormatter(new ConstantContact\ConstantContactForms\Monolog\Formatter\FluentdFormatter());
  * $logger->pushHandler($fluentHandler);
  *
  * @author Andrius Putna <fordnox@gmail.com>

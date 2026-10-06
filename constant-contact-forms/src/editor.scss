@@ -1,0 +1,235 @@
+// sass-lint:disable class-name-format no-qualifying-elements id-name-format
+
+$brand-blue: #1756ec;
+
+// Primary palette
+$color-green: rgb(46,204,64);
+$color-red: rgb(255,65,54);
+
+// Grayscale
+$color-gray: #aaa;
+$color-white: #fff;
+$color-white-semi: rgba(255, 255, 255, 0.1);
+
+// Theming
+$color-error: $color-red;
+$color-error-semi: rgb(255, 65, 54, 0.5);
+$color-success: $color-green;
+
+@mixin clearfix {
+  &::after {
+	clear: both;
+	content: '';
+	display: table;
+  }
+}
+
+//--------------------------------------------------------------
+// EDIT VIEW
+//--------------------------------------------------------------
+
+.ctct-block-title {
+  margin: 0;
+}
+
+.ctct-block-container-edit {
+  display: flex;
+  flex-direction: column;
+  text-align: center;
+  align-items: center;
+  overflow: hidden;
+  background-color: $brand-blue;
+  padding: 40px;
+  color: $color-white;
+
+	label {
+	  color: $color-white;
+	}
+}
+
+.ctct-block-container {
+  &--component {
+	max-width: 400px;
+	width: 100%;
+  }
+
+  &--header,
+  &--selection {
+	display: flex;
+	flex-direction: column;
+	align-items: center;
+  }
+
+  &--header {
+	margin: 0;
+	width: 100%;
+	img {
+	  max-width: 320px;
+	  display: block;
+	}
+  }
+
+  &--selection {
+	width: 75%;
+	padding: 20px;
+	background-color: $color-white-semi;
+	margin: 20px 0 0;
+
+	small {
+	  font-size: 14px;
+	  font-weight: 600;
+	  margin: 0 0 10px;
+	  display: block;
+	}
+  }
+}
+//--------------------------------------------------------------
+// PREVIEW VIEW -- Approximately how it'll appear on the frontend.
+//--------------------------------------------------------------
+
+.ctct-form-wrapper {
+  input {
+	&[type='text'],
+	&[type='email'],
+	&[type='password'],
+	&[type='tel'],
+	&[type='number'] {
+	  &:required:valid {
+		background-image: url(../assets/images/check_circle.svg);
+		background-position: 8px 50%;
+		background-repeat: no-repeat;
+		background-size: 18px;
+		border-color: $color-success;
+		padding-left: 32px;
+	  }
+
+	  &:required.ctct-invalid,
+	  &.ctct-invalid {
+		background: $color-white url(../assets/images/error.svg) no-repeat;
+		background-color: $color-error-semi;
+		background-position: 8px 50%;
+		background-size: 24px;
+		border-color: $color-error;
+		padding-left: 40px;
+	  }
+	}
+  }
+
+  select {
+	&.ctct-label-top,
+	&.ctct-label-bottom {
+	  width: 100%;
+	}
+  }
+
+  .ctct-field-error {
+	color: $color-red;
+	font-size: 0.85rem;
+	font-style: italic;
+  }
+
+  input.ctct-label-left,
+  textarea.ctct-label-left {
+	display: inline-block;
+	width: 75%;
+  }
+
+  span.ctct-label-left {
+	display: inline-block;
+	margin-right: 5%;
+	width: 20%;
+  }
+
+  input.ctct-label-right,
+  textarea.ctct-label-right,
+  select.ctct-label-right {
+	display: inline-block;
+	margin-right: 5%;
+	width: 75%;
+
+	&[type="checkbox"] {
+	  width: auto;
+	}
+  }
+
+  span.ctct-label-right {
+	display: inline-block;
+	width: 20%;
+  }
+
+  span.ctct-label-hidden {
+	left: -9999px !important;
+	position: absolute !important;
+	top: -9999px !important;
+  }
+
+  .ctct-form {
+	@include clearfix;
+
+	.ctct-label-top label,
+	.ctct-label-bottom label {
+	  display: block;
+	}
+
+	.ctct-label-left label,
+	.ctct-label-right label {
+	  display: inline-block;
+	}
+
+	abbr {
+	  border: none;
+	  color: $color-red;
+	  font-size: 0.9rem;
+	}
+
+  }
+
+  .ctct-input-container {
+
+	label {
+	  color: $color-gray;
+	  font-size: 0.8rem;
+	}
+  }
+
+  .ctct-submit {
+	cursor: pointer;
+  }
+
+  .ctct-form-field-checkbox {
+
+	fieldset {
+	  border: none;
+	  padding: 0;
+
+	  legend {
+		font-weight: normal;
+		padding: 0;
+	  }
+	}
+  }
+
+  .ctct-birthday-fields,
+  .ctct-anniversary-fields {
+	display: flex;
+
+	&.ctct-birthday-label-,
+	&.ctct-anniversary-label- {
+	  &top {
+		align-items: flex-end;
+
+		.ctct-date-field-separator {
+		  margin: 0 10px 2rem;
+		}
+	  }
+
+	  &bottom {
+		align-items: flex-start;
+
+		.ctct-date-field-separator {
+		  margin: 0.5rem 10px 0;
+		}
+	  }
+	}
+  }
+}

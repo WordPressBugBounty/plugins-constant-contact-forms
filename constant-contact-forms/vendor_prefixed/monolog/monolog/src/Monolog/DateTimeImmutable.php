@@ -16,7 +16,7 @@ class_alias(JsonSerializableDateTimeImmutable::class, 'ConstantContact\ConstantC
 // @phpstan-ignore-next-line
 if (false) {
     /**
-     * @deprecated Use \Monolog\JsonSerializableDateTimeImmutable instead.
+     * @deprecated Use \ConstantContact\ConstantContactForms\Monolog\JsonSerializableDateTimeImmutable instead.
      */
     class DateTimeImmutable extends JsonSerializableDateTimeImmutable
     {

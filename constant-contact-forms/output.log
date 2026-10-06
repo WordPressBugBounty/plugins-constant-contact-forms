@@ -1,0 +1,58 @@
+Running php-build composer
+
+WARNING! Your credentials are stored unencrypted in '/home/runner/.docker/config.json'.
+Configure a credential helper to remove this warning. See
+https://docs.docker.com/go/credential-store/
+
+Login Succeeded
+Pulling docker.pkg.github.com/webdevstudios/constant-contact-forms/php-actions_composer_constant-contact-forms:php-8-build2
+php-8-build2: Pulling from webdevstudios/constant-contact-forms/php-actions_composer_constant-contact-forms
+e2de96513ba9: Already exists
+c74954296e3d: Pulling fs layer
+406faa0b22ce: Pulling fs layer
+108ad594590c: Pulling fs layer
+88c97ededfa5: Pulling fs layer
+0bfa53ef0584: Pulling fs layer
+6361c0c16a9a: Pulling fs layer
+b7fa1c822b37: Pulling fs layer
+52bc90a67a58: Pulling fs layer
+1e3e69815c54: Pulling fs layer
+88c97ededfa5: Waiting
+b7fa1c822b37: Waiting
+52bc90a67a58: Waiting
+0bfa53ef0584: Waiting
+1e3e69815c54: Waiting
+6361c0c16a9a: Waiting
+108ad594590c: Verifying Checksum
+108ad594590c: Download complete
+406faa0b22ce: Verifying Checksum
+406faa0b22ce: Download complete
+c74954296e3d: Verifying Checksum
+c74954296e3d: Download complete
+c74954296e3d: Pull complete
+406faa0b22ce: Pull complete
+0bfa53ef0584: Verifying Checksum
+0bfa53ef0584: Download complete
+108ad594590c: Pull complete
+88c97ededfa5: Verifying Checksum
+88c97ededfa5: Download complete
+b7fa1c822b37: Verifying Checksum
+b7fa1c822b37: Download complete
+88c97ededfa5: Pull complete
+0bfa53ef0584: Pull complete
+52bc90a67a58: Verifying Checksum
+52bc90a67a58: Download complete
+6361c0c16a9a: Verifying Checksum
+6361c0c16a9a: Download complete
+1e3e69815c54: Verifying Checksum
+1e3e69815c54: Download complete
+6361c0c16a9a: Pull complete
+b7fa1c822b37: Pull complete
+52bc90a67a58: Pull complete
+1e3e69815c54: Pull complete
+Digest: sha256:949ad3a7d9e010d1a11dda718561da8340f1c5dbbcf0610781f7dbe5c9f907ae
+Status: Downloaded newer image for docker.pkg.github.com/webdevstudios/constant-contact-forms/php-actions_composer_constant-contact-forms:php-8-build2
+docker.pkg.github.com/webdevstudios/constant-contact-forms/php-actions_composer_constant-contact-forms:php-8-build2
+Docker tag: docker.pkg.github.com/webdevstudios/constant-contact-forms/php-actions_composer_constant-contact-forms:php-8-build2
+No private keys supplied
+Command: composer install --no-progress --no-interaction --no-dev

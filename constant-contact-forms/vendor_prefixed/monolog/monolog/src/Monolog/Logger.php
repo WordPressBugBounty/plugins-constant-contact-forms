@@ -37,7 +37,7 @@ class Logger implements LoggerInterface, ResettableInterface
     /**
      * Detailed debug information
      *
-     * @deprecated Use \Monolog\Level::Debug
+     * @deprecated Use \ConstantContact\ConstantContactForms\Monolog\Level::Debug
      */
     public const DEBUG = 100;
 
@@ -46,14 +46,14 @@ class Logger implements LoggerInterface, ResettableInterface
      *
      * Examples: User logs in, SQL logs.
      *
-     * @deprecated Use \Monolog\Level::Info
+     * @deprecated Use \ConstantContact\ConstantContactForms\Monolog\Level::Info
      */
     public const INFO = 200;
 
     /**
      * Uncommon events
      *
-     * @deprecated Use \Monolog\Level::Notice
+     * @deprecated Use \ConstantContact\ConstantContactForms\Monolog\Level::Notice
      */
     public const NOTICE = 250;
 
@@ -63,14 +63,14 @@ class Logger implements LoggerInterface, ResettableInterface
      * Examples: Use of deprecated APIs, poor use of an API,
      * undesirable things that are not necessarily wrong.
      *
-     * @deprecated Use \Monolog\Level::Warning
+     * @deprecated Use \ConstantContact\ConstantContactForms\Monolog\Level::Warning
      */
     public const WARNING = 300;
 
     /**
      * Runtime errors
      *
-     * @deprecated Use \Monolog\Level::Error
+     * @deprecated Use \ConstantContact\ConstantContactForms\Monolog\Level::Error
      */
     public const ERROR = 400;
 
@@ -79,7 +79,7 @@ class Logger implements LoggerInterface, ResettableInterface
      *
      * Example: Application component unavailable, unexpected exception.
      *
-     * @deprecated Use \Monolog\Level::Critical
+     * @deprecated Use \ConstantContact\ConstantContactForms\Monolog\Level::Critical
      */
     public const CRITICAL = 500;
 
@@ -89,14 +89,14 @@ class Logger implements LoggerInterface, ResettableInterface
      * Example: Entire website down, database unavailable, etc.
      * This should trigger the SMS alerts and wake you up.
      *
-     * @deprecated Use \Monolog\Level::Alert
+     * @deprecated Use \ConstantContact\ConstantContactForms\Monolog\Level::Alert
      */
     public const ALERT = 550;
 
     /**
      * Urgent alert.
      *
-     * @deprecated Use \Monolog\Level::Emergency
+     * @deprecated Use \ConstantContact\ConstantContactForms\Monolog\Level::Emergency
      */
     public const EMERGENCY = 600;
 
@@ -462,7 +462,7 @@ class Logger implements LoggerInterface, ResettableInterface
      * @phpstan-param  value-of<Level::VALUES>|Level $level
      * @phpstan-return value-of<Level::NAMES>
      *
-     * @deprecated Since 3.0, use {@see toMonologLevel} or {@see \Monolog\Level->getName()} instead
+     * @deprecated Since 3.0, use {@see toMonologLevel} or {@see \ConstantContact\ConstantContactForms\Monolog\Level->getName()} instead
      */
     public static function getLevelName(int|Level $level): string
     {

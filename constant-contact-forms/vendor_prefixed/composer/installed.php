@@ -2,8 +2,8 @@
   'root' => 
   array (
     'name' => 'constantcontact/constant-contact-forms',
-    'pretty_version' => '1.0.0+no-version-set',
-    'version' => '1.0.0.0',
+    'pretty_version' => '2.22.0',
+    'version' => '2.22.0.0',
     'reference' => NULL,
     'type' => 'library',
     'install_path' => __DIR__ . '/../',
